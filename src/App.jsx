@@ -4,6 +4,7 @@ import { ProfileScreen } from './features/ProfileScreen';
 import { LevelSelect } from './features/LevelSelect';
 import { FlagGame } from './features/flag-game/FlagGame';
 import { useGameStats } from './hooks/useGameStats';
+import PixelSnow from './components/PixelSnow';
 
 
 export default function App() {
@@ -47,7 +48,9 @@ export default function App() {
   };
 
   if (screen === 'intro') {
-    return <IntroScreen onStart={handleStart} onProfile={handleProfile} />;
+    return <IntroScreen onStart={handleStart} onProfile={handleProfile}
+    
+    /> ;
   }
 
   if (screen === 'profile') {
