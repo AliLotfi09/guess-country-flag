@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getRandomCountry } from '../data/countries';
 
-export function useGameEngine(onGameComplete, onSaveProgress) {
+export function useGameEngine(onGameComplete, onSaveProgress, onEarnCoins) {
   const [gameStarted, setGameStarted] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -18,7 +18,6 @@ export function useGameEngine(onGameComplete, onSaveProgress) {
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [hintsUsed, setHintsUsed] = useState([]);
 
-  // Auto-save progress
   useEffect(() => {
     if (gameStarted && currentCountry && !isGameComplete) {
       const gameState = {
@@ -86,7 +85,18 @@ export function useGameEngine(onGameComplete, onSaveProgress) {
     const hintPenalty = hintsUsed.length * 5;
     const totalPoints = isCorrect ? Math.max(0, basePoints + streakBonus - hintPenalty) : 0;
     
+    // محاسبه سکه برای این سوال
+    let coinsEarned = 0;
     if (isCorrect) {
+      coinsEarned = 2; // پایه
+      if (streak >= 5) coinsEarned += 3; // بونوس streak
+      if (hintsUsed.length === 0) coinsEarned += 1; // بونوس بدون راهنما
+      
+      // اضافه کردن سکه
+      if (onEarnCoins) {
+        onEarnCoins(coinsEarned);
+      }
+      
       setScore(prev => prev + totalPoints);
       setCorrectAnswers(prev => prev + 1);
       setStreak(prev => {
@@ -103,8 +113,9 @@ export function useGameEngine(onGameComplete, onSaveProgress) {
       type: isCorrect ? 'correct' : 'incorrect',
       correctAnswer: currentCountry.name,
       points: totalPoints,
+      coins: coinsEarned,
     });
-  }, [isAnswered, currentCountry, streak, currentLevel, hintsUsed]);
+  }, [isAnswered, currentCountry, streak, currentLevel, hintsUsed, onEarnCoins]);
 
   const useHint = useCallback((type) => {
     if (hintsUsed.includes(type)) return null;

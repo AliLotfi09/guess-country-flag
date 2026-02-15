@@ -1,38 +1,37 @@
+// src/hooks/useGameStats.js
 import { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'flag_game_stats';
 
 const getInitialStats = () => {
+  const defaultStats = {
+    coins: 50,
+    totalGames: 0,
+    totalScore: 0,
+    bestScores: { easy: 0, medium: 0, hard: 0 },
+    bestAccuracy: { easy: 0, medium: 0, hard: 0 },
+    longestStreak: 0,
+    gamesPerLevel: { easy: 0, medium: 0, hard: 0 },
+  };
+
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      
+      // Migration: اگه فیلدی null یا undefined بود، مقدار پیش‌فرض بده
+      return {
+        ...defaultStats,
+        ...parsed,
+        coins: parsed.coins ?? 50, // اگه null یا undefined بود، 50 بده
+        longestStreak: parsed.longestStreak ?? 0, // اگه null یا undefined بود، 0 بده
+      };
     }
   } catch (e) {
     console.error('Error loading stats:', e);
   }
   
-  return {
-    coins: 100, // سکه اولیه
-    totalGames: 0,
-    totalScore: 0,
-    bestScores: {
-      easy: 0,
-      medium: 0,
-      hard: 0,
-    },
-    bestAccuracy: {
-      easy: 0,
-      medium: 0,
-      hard: 0,
-    },
-    longestStreak: 0,
-    gamesPerLevel: {
-      easy: 0,
-      medium: 0,
-      hard: 0,
-    },
-  };
+  return defaultStats;
 };
 
 export function useGameStats() {
@@ -47,20 +46,20 @@ export function useGameStats() {
   }, [stats]);
 
   const updateStats = (level, score, correctAnswers, totalQuestions, bestStreakValue) => {
-    // محاسبه دقیق accuracy
     const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-    
-    // محاسبه سکه‌های به‌دست آمده
-    const baseCoins = Math.floor(score / 10);
-    const correctBonus = correctAnswers * 2;
-    const coinsEarned = baseCoins + correctBonus;
+    const completionBonus = 10;
     
     setStats(prev => {
-      const newLongestStreak = Math.max(prev.longestStreak || 0, bestStreakValue || 0);
+      // مطمئن شو مقادیر number هستن نه null
+      const currentCoins = prev.coins ?? 0;
+      const currentLongestStreak = prev.longestStreak ?? 0;
+      const newBestStreak = bestStreakValue ?? 0;
+      
+      const newLongestStreak = Math.max(currentLongestStreak, newBestStreak);
       
       return {
         ...prev,
-        coins: prev.coins + coinsEarned,
+        coins: currentCoins + completionBonus,
         totalGames: prev.totalGames + 1,
         totalScore: prev.totalScore + score,
         bestScores: {
@@ -79,20 +78,40 @@ export function useGameStats() {
       };
     });
 
-    return coinsEarned;
+    return completionBonus;
+  };
+
+  const earnCoins = (amount) => {
+    setStats(prev => ({
+      ...prev,
+      coins: (prev.coins ?? 0) + amount
+    }));
   };
 
   const spendCoins = (amount) => {
-    if (stats.coins >= amount) {
-      setStats(prev => ({ ...prev, coins: prev.coins - amount }));
+    const currentCoins = stats.coins ?? 0;
+    if (currentCoins >= amount) {
+      setStats(prev => ({ 
+        ...prev, 
+        coins: (prev.coins ?? 0) - amount 
+      }));
       return true;
     }
     return false;
   };
 
   const resetStats = () => {
-    setStats(getInitialStats());
+    const defaultStats = {
+      coins: 50,
+      totalGames: 0,
+      totalScore: 0,
+      bestScores: { easy: 0, medium: 0, hard: 0 },
+      bestAccuracy: { easy: 0, medium: 0, hard: 0 },
+      longestStreak: 0,
+      gamesPerLevel: { easy: 0, medium: 0, hard: 0 },
+    };
+    setStats(defaultStats);
   };
 
-  return { stats, updateStats, spendCoins, resetStats };
+  return { stats, updateStats, earnCoins, spendCoins, resetStats };
 }

@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useState } from 'react';
 import { IntroScreen } from '@features/IntroScreen';
 import { ProfileScreen } from '@features/ProfileScreen';
@@ -10,12 +11,14 @@ import { useGameProgress } from '@hooks/useGameProgress';
 export default function App() {
   const [screen, setScreen] = useState('intro');
   const [selectedLevel, setSelectedLevel] = useState(null);
-  const { stats, updateStats, spendCoins, resetStats } = useGameStats();
+  const { stats, updateStats, earnCoins, spendCoins, resetStats } = useGameStats();
   const { savedProgress, saveProgress, clearProgress } = useGameProgress();
   const [showResumeDialog, setShowResumeDialog] = useState(false);
 
+  // Debug
+  console.log('App Stats:', stats);
+
   const handleStart = () => {
-    // چک کردن آیا بازی ناتمامی وجود دارد
     if (savedProgress && Date.now() - savedProgress.timestamp < 24 * 60 * 60 * 1000) {
       setShowResumeDialog(true);
     } else {
@@ -47,11 +50,8 @@ export default function App() {
   };
 
   const handleGameComplete = (level, score, correctAnswers, totalQuestions, bestStreak) => {
-    const coinsEarned = updateStats(level, score, correctAnswers, totalQuestions, bestStreak);
+    const completionBonus = updateStats(level, score, correctAnswers, totalQuestions, bestStreak);
     clearProgress();
-    
-    // نمایش سکه‌های به دست آمده
-    alert(`شما ${coinsEarned} سکه به دست آوردید! 🎉`);
   };
 
   const handleBack = () => {
@@ -83,7 +83,7 @@ export default function App() {
   }
 
   if (screen === 'intro') {
-    return <IntroScreen onStart={handleStart} onProfile={handleProfile} />;
+    return <IntroScreen onStart={handleStart} onProfile={handleProfile} stats={stats} />;
   }
 
   if (screen === 'profile') {
@@ -107,7 +107,8 @@ export default function App() {
         level={selectedLevel} 
         onBack={handleBack}
         onGameComplete={handleGameComplete}
-        coins={stats.coins}
+        coins={stats.coins ?? 0}
+        onEarnCoins={earnCoins}  // ✅ مهم: این رو اضافه کن
         onSpendCoins={spendCoins}
         onSaveProgress={saveProgress}
         savedProgress={screen === 'game-resume' ? savedProgress : null}

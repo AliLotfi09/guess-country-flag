@@ -1,20 +1,26 @@
+// src/features/FlagGame.jsx
 import { useEffect, useState } from 'react';
-import { ChevronRight, Trophy, Flame, CheckCircle, XCircle, Lightbulb, Coins, MapPin } from 'lucide-react';
+import { ChevronRight, Trophy, Flame, CheckCircle, XCircle, Lightbulb, Coins } from 'lucide-react';
 import { searchCountries } from '@data/countries';
 import { useGameEngine } from '@hooks/useGameEngine';
 
-export function FlagGame({ level, onBack, onGameComplete, coins, onSpendCoins, onSaveProgress, savedProgress }) {
+export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, onSpendCoins, onSaveProgress, savedProgress }) {
   const game = useGameEngine(
     (lvl, score, correctAns, total, streak) => {
       onGameComplete(lvl, score, correctAns, total, streak);
     },
-    onSaveProgress
+    onSaveProgress,
+    onEarnCoins  // ✅ پاس بده به useGameEngine
   );
   
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showHintMenu, setShowHintMenu] = useState(false);
   const [activeHints, setActiveHints] = useState({});
+
+  // Debug
+  console.log('FlagGame coins:', coins);
+  console.log('FlagGame onEarnCoins:', onEarnCoins);
 
   useEffect(() => {
     if (savedProgress) {
@@ -158,7 +164,9 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onSpendCoins, o
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-full">
                 <Coins className="w-4 h-4 text-yellow-600" strokeWidth={2} />
-                <span className="text-sm font-bold text-yellow-700">{coins}</span>
+                <span className="text-sm font-bold text-yellow-700">
+                  {coins === 0 ? 'صفر' : coins}
+                </span>
               </div>
               
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
@@ -325,10 +333,30 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onSpendCoins, o
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">آفرین! 🎉</h3>
                 <p className="text-gray-600 mb-4">پاسخ شما صحیح است</p>
-                <div className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl mb-6">
-                  <Trophy className="w-5 h-5 text-yellow-600" strokeWidth={2} />
-                  <span className="text-2xl font-bold text-yellow-600">+{game.feedback.points}</span>
+                
+                <div className="space-y-2 mb-6">
+                  {/* امتیاز */}
+                  <div className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
+                    <Trophy className="w-5 h-5 text-yellow-600" strokeWidth={2} />
+                    <span className="text-2xl font-bold text-yellow-600">+{game.feedback.points}</span>
+                  </div>
+                  
+                  {/* سکه */}
+                  {game.feedback.coins > 0 && (
+                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-orange-50 border-2 border-orange-200 rounded-xl animate-pulse">
+                      <Coins className="w-5 h-5 text-orange-600" strokeWidth={2} />
+                      <span className="text-2xl font-bold text-orange-600">+{game.feedback.coins}</span>
+                    </div>
+                  )}
                 </div>
+
+                {/* توضیح بونوس */}
+                {game.feedback.coins > 2 && (
+                  <p className="text-xs text-gray-500 mb-6">
+                    {game.streak >= 5 && '🔥 بونوس زنجیره! '}
+                    {activeHints && Object.keys(activeHints).length === 0 && '⭐ بدون راهنما!'}
+                  </p>
+                )}
               </>
             ) : (
               <>
