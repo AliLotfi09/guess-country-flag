@@ -1,18 +1,38 @@
 import { useState } from 'react';
-import { IntroScreen } from './features/IntroScreen';
-import { ProfileScreen } from './features/ProfileScreen';
-import { LevelSelect } from './features/LevelSelect';
-import { FlagGame } from './features/flag-game/FlagGame';
-import { useGameStats } from './hooks/useGameStats';
-import PixelSnow from './components/PixelSnow';
-
+import { IntroScreen } from '@features/IntroScreen';
+import { ProfileScreen } from '@features/ProfileScreen';
+import { LevelSelect } from '@features/LevelSelect';
+import { FlagGame } from '@features/flag-game/FlagGame';
+import { ResumeGameDialog } from '@features/ResumeGameDialog';
+import { useGameStats } from '@hooks/useGameStats';
+import { useGameProgress } from '@hooks/useGameProgress';
 
 export default function App() {
   const [screen, setScreen] = useState('intro');
   const [selectedLevel, setSelectedLevel] = useState(null);
-  const { stats, updateStats, resetStats } = useGameStats();
+  const { stats, updateStats, spendCoins, resetStats } = useGameStats();
+  const { savedProgress, saveProgress, clearProgress } = useGameProgress();
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
 
   const handleStart = () => {
+    // چک کردن آیا بازی ناتمامی وجود دارد
+    if (savedProgress && Date.now() - savedProgress.timestamp < 24 * 60 * 60 * 1000) {
+      setShowResumeDialog(true);
+    } else {
+      clearProgress();
+      setScreen('level');
+    }
+  };
+
+  const handleResumeGame = () => {
+    setSelectedLevel(savedProgress.currentLevel);
+    setShowResumeDialog(false);
+    setScreen('game-resume');
+  };
+
+  const handleNewGame = () => {
+    clearProgress();
+    setShowResumeDialog(false);
     setScreen('level');
   };
 
@@ -21,12 +41,17 @@ export default function App() {
   };
 
   const handleSelectLevel = (level) => {
+    clearProgress();
     setSelectedLevel(level);
     setScreen('game');
   };
 
-  const handleGameComplete = (level, score, accuracy, streak) => {
-    updateStats(level, score, accuracy, streak);
+  const handleGameComplete = (level, score, correctAnswers, totalQuestions, bestStreak) => {
+    const coinsEarned = updateStats(level, score, correctAnswers, totalQuestions, bestStreak);
+    clearProgress();
+    
+    // نمایش سکه‌های به دست آمده
+    alert(`شما ${coinsEarned} سکه به دست آوردید! 🎉`);
   };
 
   const handleBack = () => {
@@ -47,10 +72,18 @@ export default function App() {
     setScreen('level');
   };
 
+  if (showResumeDialog) {
+    return (
+      <ResumeGameDialog
+        onResume={handleResumeGame}
+        onNewGame={handleNewGame}
+        progress={savedProgress}
+      />
+    );
+  }
+
   if (screen === 'intro') {
-    return <IntroScreen onStart={handleStart} onProfile={handleProfile}
-    
-    /> ;
+    return <IntroScreen onStart={handleStart} onProfile={handleProfile} />;
   }
 
   if (screen === 'profile') {
@@ -68,11 +101,19 @@ export default function App() {
     return <LevelSelect onSelectLevel={handleSelectLevel} onBack={handleBackToIntro} />;
   }
 
-  return (
-    <FlagGame 
-      level={selectedLevel} 
-      onBack={handleBack}
-      onGameComplete={handleGameComplete}
-    />
-  );
+  if (screen === 'game' || screen === 'game-resume') {
+    return (
+      <FlagGame 
+        level={selectedLevel} 
+        onBack={handleBack}
+        onGameComplete={handleGameComplete}
+        coins={stats.coins}
+        onSpendCoins={spendCoins}
+        onSaveProgress={saveProgress}
+        savedProgress={screen === 'game-resume' ? savedProgress : null}
+      />
+    );
+  }
+
+  return null;
 }
