@@ -1,55 +1,205 @@
 import { Flag } from "lucide-react";
 import ShinyText from "@components/ShinyText";
-import DotGrid from "@components/DotGrid"; // مسیر درست
+import GridMotion from "@components/GridMotion";
+import "flag-icons/css/flag-icons.min.css";
+
+const countryCodes = [
+  "ir",
+  "us",
+  "de",
+  "fr",
+  "jp",
+  "br",
+  "ca",
+  "it",
+  "es",
+  "gb",
+  "cn",
+  "ru",
+  "tr",
+  "az",
+  "in",
+  "kr",
+  "sa",
+  "ae",
+  "ar",
+  "mx",
+  "nl",
+  "se",
+  "no",
+  "ch",
+  "au",
+  "be",
+  "dk",
+  "fi",
+  "gr",
+  "ie",
+  "pt",
+  "pl",
+  "cz",
+  "hu",
+  "ro",
+  "bg",
+  "ua",
+  "by",
+  "lt",
+  "lv",
+  "ee",
+  "sk",
+  "si",
+  "hr",
+  "ba",
+  "rs",
+  "me",
+  "mk",
+  "al",
+  "is",
+  "li",
+  "lu",
+  "mt",
+  "cy",
+  "jo",
+  "kw",
+  "om",
+  "qa",
+  "bh",
+  "eg",
+  "ma",
+  "tn",
+  "dz",
+  "ly",
+  "sd",
+  "et",
+  "ke",
+  "tz",
+  "ug",
+  "ng",
+  "gh",
+  "ci",
+  "sn",
+  "ml",
+  "bf",
+  "ne",
+  "sl",
+  "lr",
+  "gm",
+  "zw",
+  "zm",
+  "na",
+  "bw",
+  "ao",
+  "mz",
+  "mg",
+  "sc",
+  "mu",
+  "lk",
+  "np",
+  "bt",
+  "mn",
+  "kz",
+  "uz",
+  "tm",
+  "kg",
+  "tj",
+  "af",
+  "pk",
+  "bd",
+  "mm",
+  "th",
+  "vn",
+  "kh",
+  "la",
+  "my",
+  "sg",
+  "id",
+  "ph",
+  "tl",
+  "bn",
+  "nc",
+  "vu",
+  "fj",
+  "pg",
+  "sb",
+  "ws",
+  "to",
+  "ki",
+  "tv",
+  "mh",
+  "pw",
+  "fm",
+  "cn",
+  "tw",
+  "hk",
+  "mo",
+  "sa",
+  "ye",
+  "iq",
+  "sy",
+  "lb",
+  "ps",
+  "il",
+  "tr",
+];
+
+// آیتم‌های GridMotion با span از flag-icons
+const items = countryCodes.map((code) => (
+  <div
+    key={code}
+    className="overflow-hidden flex items-center justify-center rounded-xl w-24 rotate-90"
+    style={{}} // افقی‌تر
+  >
+    <img
+      src={`https://cdn.jsdelivr.net/npm/country-flag-icons/3x2/${code.toUpperCase()}.svg`}
+      alt={code}
+      className=""
+    />
+  </div>
+));
 
 export function IntroScreen({ onStart, onProfile }) {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      {/* والد DotGrid با height مشخص */}
-      <div className="absolute inset-0 w-full h-full">
-        <DotGrid
-          dotSize={2}
-          gap={15}
-          baseColor="#58447d"
-    activeColor="#ffffff"
-          proximity={120}
-          shockRadius={250}
-          shockStrength={5}
-          resistance={750}
-          returnDuration={1.5}
+    <div className="relative min-h-screen overflow-hidden bg-gray-50 flex items-center justify-center p-6">
+      {/* GridMotion به صورت absolute پشت کارت‌ها */}
+      <div className="absolute inset-0 z-0">
+        <GridMotion
+          className="bg-gray-50 w-3"
+          items={items}
+          gradientColor="transparent"
+          horizontal={true}
         />
       </div>
 
-      {/* محتوا کارت */}
-      <div className="w-full max-w-md relative z-10 mx-auto">
-        <div className="bg-white border border-gray-200 rounded-3xl p-8 mb-4 shadow-lg">
+      {/* Content کارت‌ها */}
+      <div className="relative z-10 w-full max-w-md mx-auto">
+        <div className="bg-white/90 border border-gray-200 rounded-3xl p-8 shadow-xl backdrop-blur-lg">
           {/* Title */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Flag size={28} strokeWidth={2} className="text-white" />
+              <Flag size={28} className="text-white" />
             </div>
+
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
               <ShinyText
-                text="پرچم یـــاب"
+                text="درفــش باز"
                 speed={2}
-                delay={0}
                 color="var(--primary)"
                 shineColor="oklch(0.708 0 0)"
                 spread={90}
                 direction="left"
                 yoyo
-                pauseOnHover={false}
-                disabled={false}
               />
             </h1>
-            <p className="text-gray-500">دانش جغرافیایی خود را بسنجید</p>
+
+            <p className="text-gray-500 text-sm">
+              دانش جغرافیایی خود را بسنجید
+            </p>
           </div>
 
           {/* Info */}
           <div className="space-y-3 mb-8 text-sm text-gray-600">
             {[
               "150 کشور در 3 سطح دشواری",
-              "هر بازی 50 سوال از 50 کشور هر سطح",
+              "هر بازی 50 سوال از هر سطح",
               "پاسخ‌های متوالی صحیح امتیاز بیشتری دارند",
             ].map((text, i) => (
               <div key={i} className="flex items-start gap-3">
@@ -64,17 +214,16 @@ export function IntroScreen({ onStart, onProfile }) {
           {/* Start Button */}
           <button
             onClick={onStart}
-            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-semibold hover:bg-gray-800 transition-transform active:scale-95"
+            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-semibold transition hover:bg-gray-800 active:scale-95"
           >
             شروع بازی
           </button>
         </div>
 
-        {/* Profile Link */}
+        {/* Profile */}
         <button
           onClick={onProfile}
-          className="w-full py-3 text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
-        >
+          className="w-full border-gray-200 bg-gray-900/40 backdrop-blur-lg rounded-lg my-3  py-3 text-sm text-gray-200 hover:text-gray-300 transition font-medium">
           مشاهده آمار و رکوردها
         </button>
       </div>

@@ -11,6 +11,9 @@
     AbarLowFaNum,
     -apple-system,
     sans-serif !important;
+  user-select: none;
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -214,4 +217,11 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+
+/* 1. تغییر رنگ بک‌گراند مادر */
+.relative.w-full.h-full.overflow-hidden.bg-\[\#111\] {
+  background-color: #ecececd3; /* یا رنگ دلخواه */
+  height: 90%;
 }
