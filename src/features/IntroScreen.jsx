@@ -1,152 +1,27 @@
+// src/features/IntroScreen.jsx
 import { Flag } from "lucide-react";
 import ShinyText from "@components/ShinyText";
 import GridMotion from "@components/GridMotion";
 import "flag-icons/css/flag-icons.min.css";
 
 const countryCodes = [
-  "ir",
-  "us",
-  "de",
-  "fr",
-  "jp",
-  "br",
-  "ca",
-  "it",
-  "es",
-  "gb",
-  "cn",
-  "ru",
-  "tr",
-  "az",
-  "in",
-  "kr",
-  "sa",
-  "ae",
-  "ar",
-  "mx",
-  "nl",
-  "se",
-  "no",
-  "ch",
-  "au",
-  "be",
-  "dk",
-  "fi",
-  "gr",
-  "ie",
-  "pt",
-  "pl",
-  "cz",
-  "hu",
-  "ro",
-  "bg",
-  "ua",
-  "by",
-  "lt",
-  "lv",
-  "ee",
-  "sk",
-  "si",
-  "hr",
-  "ba",
-  "rs",
-  "me",
-  "mk",
-  "al",
-  "is",
-  "li",
-  "lu",
-  "mt",
-  "cy",
-  "jo",
-  "kw",
-  "om",
-  "qa",
-  "bh",
-  "eg",
-  "ma",
-  "tn",
-  "dz",
-  "ly",
-  "sd",
-  "et",
-  "ke",
-  "tz",
-  "ug",
-  "ng",
-  "gh",
-  "ci",
-  "sn",
-  "ml",
-  "bf",
-  "ne",
-  "sl",
-  "lr",
-  "gm",
-  "zw",
-  "zm",
-  "na",
-  "bw",
-  "ao",
-  "mz",
-  "mg",
-  "sc",
-  "mu",
-  "lk",
-  "np",
-  "bt",
-  "mn",
-  "kz",
-  "uz",
-  "tm",
-  "kg",
-  "tj",
-  "af",
-  "pk",
-  "bd",
-  "mm",
-  "th",
-  "vn",
-  "kh",
-  "la",
-  "my",
-  "sg",
-  "id",
-  "ph",
-  "tl",
-  "bn",
-  "nc",
-  "vu",
-  "fj",
-  "pg",
-  "sb",
-  "ws",
-  "to",
-  "ki",
-  "tv",
-  "mh",
-  "pw",
-  "fm",
-  "cn",
-  "tw",
-  "hk",
-  "mo",
-  "sa",
-  "ye",
-  "iq",
-  "sy",
-  "lb",
-  "ps",
-  "il",
-  "tr",
+  "ir", "us", "de", "fr", "jp", "br", "ca", "it", "es", "gb",
+  "cn", "ru", "tr", "az", "in", "kr", "sa", "ae", "ar", "mx",
+  "nl", "se", "no", "ch", "au", "be", "dk", "fi", "gr", "ie",
+  "pt", "pl", "cz", "hu", "ro", "bg", "ua", "by", "lt", "lv",
+  "ee", "sk", "si", "hr", "ba", "rs", "me", "mk", "al", "is",
+  "li", "lu", "mt", "cy", "jo", "kw", "om", "qa", "bh", "eg",
+  "ma", "tn", "dz", "ly", "sd", "et", "ke", "tz", "ug", "ng",
+  "gh", "ci", "sn", "ml", "bf", "ne", "sl", "lr", "gm", "zw",
+  "zm", "na", "bw", "ao", "mz", "mg", "sc", "mu", "lk", "np",
+  "bt", "mn", "kz", "uz", "tm", "kg", "tj", "af", "pk", "bd",
+  "mm", "th", "vn", "kh", "la", "my", "sg", "id", "ph", "tl",
 ];
 
-// آیتم‌های GridMotion با span از flag-icons
 const items = countryCodes.map((code) => (
   <div
     key={code}
     className="overflow-hidden flex items-center justify-center rounded-xl w-24 rotate-90"
-    style={{}} // افقی‌تر
   >
     <img
       src={`https://cdn.jsdelivr.net/npm/country-flag-icons/3x2/${code.toUpperCase()}.svg`}
@@ -156,10 +31,10 @@ const items = countryCodes.map((code) => (
   </div>
 ));
 
-export function IntroScreen({ onStart, onProfile }) {
+export function IntroScreen({ onStart, onProfile, user }) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-gray-50 flex items-center justify-center p-6">
-      {/* GridMotion به صورت absolute پشت کارت‌ها */}
+      {/* GridMotion پس‌زمینه */}
       <div className="absolute inset-0 z-0">
         <GridMotion
           className="bg-gray-50 w-3"
@@ -169,10 +44,23 @@ export function IntroScreen({ onStart, onProfile }) {
         />
       </div>
 
-      {/* Content کارت‌ها */}
+      {/* محتوا */}
       <div className="relative z-10 w-full max-w-md mx-auto">
         <div className="bg-white/90 border border-gray-200 rounded-3xl p-8 shadow-xl backdrop-blur-lg">
-          {/* Title */}
+
+          {/* سلام به کاربر ایتا */}
+          {user && (
+            <div className="mb-6 px-4 py-3 bg-gray-900 rounded-2xl text-center animate-slideDown">
+              <p className="text-white text-sm font-medium">
+                سلام {user.first_name} 👋
+                {user.username && (
+                  <span className="text-gray-400 text-xs mr-1">@{user.username}</span>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* عنوان */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Flag size={28} className="text-white" />
@@ -195,7 +83,7 @@ export function IntroScreen({ onStart, onProfile }) {
             </p>
           </div>
 
-          {/* Info */}
+          {/* اطلاعات */}
           <div className="space-y-3 mb-8 text-sm text-gray-600">
             {[
               "150 کشور در 3 سطح دشواری",
@@ -211,7 +99,7 @@ export function IntroScreen({ onStart, onProfile }) {
             ))}
           </div>
 
-          {/* Start Button */}
+          {/* دکمه شروع */}
           <button
             onClick={onStart}
             className="w-full py-4 bg-gray-900 text-white rounded-2xl font-semibold transition hover:bg-gray-800 active:scale-95"
@@ -220,10 +108,11 @@ export function IntroScreen({ onStart, onProfile }) {
           </button>
         </div>
 
-        {/* Profile */}
+        {/* آمار */}
         <button
           onClick={onProfile}
-          className="w-full border-gray-200 bg-gray-900/40 backdrop-blur-lg rounded-lg my-3  py-3 text-sm text-gray-200 hover:text-gray-300 transition font-medium">
+          className="w-full border-gray-200 bg-gray-900/40 backdrop-blur-lg rounded-lg my-3 py-3 text-sm text-gray-200 hover:text-gray-300 transition font-medium"
+        >
           مشاهده آمار و رکوردها
         </button>
       </div>

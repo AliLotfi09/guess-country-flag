@@ -7,6 +7,7 @@ import { FlagGame } from '@features/flag-game/FlagGame';
 import { ResumeGameDialog } from '@features/ResumeGameDialog';
 import { useGameStats } from '@hooks/useGameStats';
 import { useGameProgress } from '@hooks/useGameProgress';
+import { useMiniApp } from '@hooks/useMiniApp';
 
 export default function App() {
   const [screen, setScreen] = useState('intro');
@@ -15,8 +16,8 @@ export default function App() {
   const { savedProgress, saveProgress, clearProgress } = useGameProgress();
   const [showResumeDialog, setShowResumeDialog] = useState(false);
 
-  // Debug
-  console.log('App Stats:', stats);
+  // ایتا SDK
+  const miniApp = useMiniApp();
 
   const handleStart = () => {
     if (savedProgress && Date.now() - savedProgress.timestamp < 24 * 60 * 60 * 1000) {
@@ -50,8 +51,12 @@ export default function App() {
   };
 
   const handleGameComplete = (level, score, correctAnswers, totalQuestions, bestStreak) => {
-    const completionBonus = updateStats(level, score, correctAnswers, totalQuestions, bestStreak);
+    updateStats(level, score, correctAnswers, totalQuestions, bestStreak);
     clearProgress();
+    // ارسال نتیجه به بات ایتا (اختیاری)
+    if (miniApp.isEitaa) {
+      miniApp.hapticNotification('success');
+    }
   };
 
   const handleBack = () => {
@@ -83,14 +88,21 @@ export default function App() {
   }
 
   if (screen === 'intro') {
-    return <IntroScreen onStart={handleStart} onProfile={handleProfile} stats={stats} />;
+    return (
+      <IntroScreen
+        onStart={handleStart}
+        onProfile={handleProfile}
+        stats={stats}
+        user={miniApp.user}
+      />
+    );
   }
 
   if (screen === 'profile') {
     return (
-      <ProfileScreen 
-        stats={stats} 
-        onBack={handleBackToIntro} 
+      <ProfileScreen
+        stats={stats}
+        onBack={handleBackToIntro}
         onReset={handleResetStats}
         onStartGame={handleStartFromProfile}
       />
@@ -103,15 +115,16 @@ export default function App() {
 
   if (screen === 'game' || screen === 'game-resume') {
     return (
-      <FlagGame 
-        level={selectedLevel} 
+      <FlagGame
+        level={selectedLevel}
         onBack={handleBack}
         onGameComplete={handleGameComplete}
         coins={stats.coins ?? 0}
-        onEarnCoins={earnCoins}  // ✅ مهم: این رو اضافه کن
+        onEarnCoins={earnCoins}
         onSpendCoins={spendCoins}
         onSaveProgress={saveProgress}
         savedProgress={screen === 'game-resume' ? savedProgress : null}
+        miniApp={miniApp}
       />
     );
   }

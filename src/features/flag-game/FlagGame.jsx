@@ -1,26 +1,32 @@
-// src/features/FlagGame.jsx
+// src/features/flag-game/FlagGame.jsx
 import { useEffect, useState } from 'react';
 import { ChevronRight, Trophy, Flame, CheckCircle, XCircle, Lightbulb, Coins } from 'lucide-react';
 import { searchCountries } from '@data/countries';
 import { useGameEngine } from '@hooks/useGameEngine';
 
-export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, onSpendCoins, onSaveProgress, savedProgress }) {
+export function FlagGame({
+  level,
+  onBack,
+  onGameComplete,
+  coins,
+  onEarnCoins,
+  onSpendCoins,
+  onSaveProgress,
+  savedProgress,
+  miniApp, // ← ایتا SDK
+}) {
   const game = useGameEngine(
     (lvl, score, correctAns, total, streak) => {
       onGameComplete(lvl, score, correctAns, total, streak);
     },
     onSaveProgress,
-    onEarnCoins  // ✅ پاس بده به useGameEngine
+    onEarnCoins
   );
-  
+
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showHintMenu, setShowHintMenu] = useState(false);
   const [activeHints, setActiveHints] = useState({});
-
-  // Debug
-  console.log('FlagGame coins:', coins);
-  console.log('FlagGame onEarnCoins:', onEarnCoins);
 
   useEffect(() => {
     if (savedProgress) {
@@ -38,13 +44,16 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
     }
   }, [query]);
 
+  // هپتیک هنگام انتخاب پیشنهاد
   const handleSelect = (country) => {
+    miniApp?.hapticSelection?.();
     game.submitAnswer(country.name);
     setQuery('');
     setSuggestions([]);
   };
 
   const handleNext = () => {
+    miniApp?.hapticImpact?.('light');
     if (game.isGameComplete) {
       game.resetGame();
       onBack();
@@ -57,17 +66,17 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
 
   const handleUseHint = (type, cost) => {
     if (coins < cost) {
+      miniApp?.hapticNotification?.('error');
       alert('سکه کافی ندارید! 💰');
       return;
     }
-
     if (activeHints[type]) {
       alert('شما قبلاً از این راهنما استفاده کرده‌اید!');
       return;
     }
-
     const success = onSpendCoins(cost);
     if (success) {
+      miniApp?.hapticImpact?.('medium');
       const hint = game.useHint(type);
       if (hint) {
         setActiveHints(prev => ({ ...prev, [type]: hint }));
@@ -160,7 +169,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
               <ChevronRight className="w-5 h-5" strokeWidth={2.5} />
               خروج
             </button>
-            
+
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-full">
                 <Coins className="w-4 h-4 text-yellow-600" strokeWidth={2} />
@@ -168,7 +177,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
                   {coins === 0 ? 'صفر' : coins}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
                 <span className="text-sm font-bold text-gray-900">
                   {game.currentQuestion + 1}/{game.totalQuestions}
@@ -178,7 +187,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
           </div>
 
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gray-900 transition-all duration-500 ease-out"
               style={{ width: `${((game.currentQuestion + 1) / game.totalQuestions) * 100}%` }}
             />
@@ -199,7 +208,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
             </div>
             <div className="text-2xl font-bold text-gray-900">{game.score}</div>
           </div>
-          
+
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -211,7 +220,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
           </div>
         </div>
 
-        {/* Active Hints */}
+        {/* راهنماهای فعال */}
         {(activeHints['first-letter'] || activeHints['continent']) && (
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4 animate-slideDown">
             <div className="flex items-start gap-3">
@@ -231,10 +240,10 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
           </div>
         )}
 
-        {/* Flag Card */}
+        {/* کارت پرچم */}
         <div className="bg-white border border-gray-200 rounded-3xl p-8 mb-6">
           <div className="aspect-[3/2] bg-gray-50 rounded-2xl flex items-center justify-center mb-6 overflow-hidden border border-gray-100">
-            <span 
+            <span
               className={`fi fi-${game.currentCountry.code} fis`}
               style={{ fontSize: '140px' }}
             />
@@ -246,11 +255,14 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
           </div>
         </div>
 
-        {/* Hint Button */}
+        {/* دکمه راهنما */}
         {!game.isAnswered && (
           <div className="mb-4">
             <button
-              onClick={() => setShowHintMenu(!showHintMenu)}
+              onClick={() => {
+                miniApp?.hapticImpact?.('light');
+                setShowHintMenu(!showHintMenu);
+              }}
               className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:border-gray-900 transition-all flex items-center justify-center gap-2 active:scale-98"
             >
               <Lightbulb className="w-5 h-5" strokeWidth={2} />
@@ -261,7 +273,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
               <div className="mt-3 bg-white border border-gray-200 rounded-2xl p-3 space-y-2 animate-slideDown">
                 <button
                   onClick={() => handleUseHint('first-letter', 10)}
-                  disabled={activeHints['first-letter']}
+                  disabled={!!activeHints['first-letter']}
                   className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition text-right disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -272,10 +284,10 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
                   </div>
                   <p className="text-xs text-gray-500">حرف اول نام کشور را نشان می‌دهد</p>
                 </button>
-                
+
                 <button
                   onClick={() => handleUseHint('continent', 15)}
-                  disabled={activeHints['continent']}
+                  disabled={!!activeHints['continent']}
                   className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition text-right disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -291,7 +303,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
           </div>
         )}
 
-        {/* Search Input */}
+        {/* جستجو */}
         <div className="relative">
           <input
             type="text"
@@ -322,7 +334,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
         </div>
       </div>
 
-      {/* Feedback Modal */}
+      {/* مودال بازخورد */}
       {game.feedback && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-6 animate-fadeIn">
           <div className="bg-white rounded-3xl p-8 text-center max-w-sm w-full animate-slideUp">
@@ -333,15 +345,13 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">آفرین! 🎉</h3>
                 <p className="text-gray-600 mb-4">پاسخ شما صحیح است</p>
-                
+
                 <div className="space-y-2 mb-6">
-                  {/* امتیاز */}
                   <div className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
                     <Trophy className="w-5 h-5 text-yellow-600" strokeWidth={2} />
                     <span className="text-2xl font-bold text-yellow-600">+{game.feedback.points}</span>
                   </div>
-                  
-                  {/* سکه */}
+
                   {game.feedback.coins > 0 && (
                     <div className="inline-flex items-center gap-2 px-6 py-3 bg-orange-50 border-2 border-orange-200 rounded-xl animate-pulse">
                       <Coins className="w-5 h-5 text-orange-600" strokeWidth={2} />
@@ -349,14 +359,6 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
                     </div>
                   )}
                 </div>
-
-                {/* توضیح بونوس */}
-                {game.feedback.coins > 2 && (
-                  <p className="text-xs text-gray-500 mb-6">
-                    {game.streak >= 5 && '🔥 بونوس زنجیره! '}
-                    {activeHints && Object.keys(activeHints).length === 0 && '⭐ بدون راهنما!'}
-                  </p>
-                )}
               </>
             ) : (
               <>
@@ -368,7 +370,7 @@ export function FlagGame({ level, onBack, onGameComplete, coins, onEarnCoins, on
                 <p className="text-2xl font-bold text-gray-900 mb-6">{game.feedback.correctAnswer}</p>
               </>
             )}
-            
+
             <button
               onClick={handleNext}
               className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-colors active:scale-98"
