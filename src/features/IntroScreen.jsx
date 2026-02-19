@@ -68,7 +68,7 @@ export function IntroScreen({ onStart, onProfile, user }) {
 
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
               <ShinyText
-                text="درفــش باز"
+                text="دِرَفــش باز"
                 speed={2}
                 color="var(--primary)"
                 shineColor="oklch(0.708 0 0)"
