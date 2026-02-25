@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { searchCountries } from "@data/countries";
 import { useGameEngine } from "@hooks/useGameEngine";
+import { GameCompleteScreen } from "./GameCompleteScreen";
 
 export function FlagGame({
   level,
@@ -21,7 +22,7 @@ export function FlagGame({
   onSpendCoins,
   onSaveProgress,
   savedProgress,
-  miniApp, // ← ایتا SDK
+  miniApp,
 }) {
   const game = useGameEngine(
     (lvl, score, correctAns, total, streak) => {
@@ -42,32 +43,8 @@ export function FlagGame({
     } else {
       game.startGame(level);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // در FlagGame.jsx - اضافه کن به useEffect ها
-
-  useEffect(() => {
-    console.log("📊 Game State:", {
-      currentQuestion: game.currentQuestion + 1,
-      totalQuestions: game.totalQuestions,
-      isGameComplete: game.isGameComplete,
-      isAnswered: game.isAnswered,
-      country: game.currentCountry?.name,
-    });
-  }, [
-    game.currentQuestion,
-    game.totalQuestions,
-    game.isGameComplete,
-    game.isAnswered,
-    game.currentCountry,
-  ]);
-
-  // ✅ وقتی بازی تموم شد، از ادامه دادن جلوگیری کن
-  useEffect(() => {
-    if (game.isGameComplete) {
-      console.log("🎉 Game completed! No more questions.");
-    }
-  }, [game.isGameComplete]);
 
   useEffect(() => {
     if (query.length > 0) {
@@ -77,7 +54,6 @@ export function FlagGame({
     }
   }, [query]);
 
-  // هپتیک هنگام انتخاب پیشنهاد
   const handleSelect = (country) => {
     miniApp?.hapticSelection?.();
     game.submitAnswer(country.name);
@@ -86,21 +62,11 @@ export function FlagGame({
   };
 
   const handleNext = () => {
-    telegram.hapticFeedback("medium");
-
-    // ✅ اگر بازی تموم شده، برگرد به منوی اصلی
-    if (game.isGameComplete) {
-      console.log("🏁 Game is complete, going back...");
-      game.resetGame();
-      onBack();
-      return;
-    }
-
-    // ✅ وگرنه برو سوال بعدی
-    console.log("➡️ Going to next question...");
+    miniApp?.hapticImpact?.("medium");
     game.nextQuestion();
     setQuery("");
     setActiveHints({});
+    setShowHintMenu(false);
   };
 
   const handleUseHint = (type, cost) => {
@@ -124,7 +90,8 @@ export function FlagGame({
     }
   };
 
-  if (!game.gameStarted || !game.currentCountry) {
+  // ── لودینگ ──
+  if (!game.gameStarted || (!game.currentCountry && !game.isGameComplete)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -135,82 +102,19 @@ export function FlagGame({
     );
   }
 
+  // ── صفحه نتیجه ──
   if (game.isGameComplete) {
     return (
-      <div className="min-h-screen bg-gray-50 animate-fadeIn">
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-2xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-center">
-              <h2 className="text-lg font-semibold text-gray-900">
-                نتیجه بازی
-              </h2>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-2xl mx-auto p-6">
-          <div className="bg-white border border-gray-200 rounded-3xl p-8">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trophy className="w-10 h-10 text-gray-900" strokeWidth={2} />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                بازی تمام شد!
-              </h3>
-              <p className="text-gray-500">
-                سطح{" "}
-                {level === "easy"
-                  ? "آسان"
-                  : level === "medium"
-                    ? "متوسط"
-                    : "سخت"}
-              </p>
-            </div>
-
-            <div className="space-y-3 mb-8">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="text-gray-600 font-medium">امتیاز کل</span>
-                <span className="text-2xl font-bold text-gray-900">
-                  {game.score}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="text-gray-600 font-medium">دقت</span>
-                <span className="text-2xl font-bold text-gray-900">
-                  {game.accuracy}%
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="text-gray-600 font-medium">بهترین زنجیره</span>
-                <span className="text-2xl font-bold text-gray-900">
-                  {game.bestStreak}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 bg-green-50 border border-green-100 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-green-600 mb-1">
-                    {game.correctAnswers}
-                  </div>
-                  <div className="text-xs text-gray-600">صحیح</div>
-                </div>
-                <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-red-600 mb-1">
-                    {game.wrongAnswers}
-                  </div>
-                  <div className="text-xs text-gray-600">غلط</div>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={onBack}
-              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-semibold hover:bg-gray-800 transition-colors active:scale-98"
-            >
-              بازگشت به منو
-            </button>
-          </div>
-        </div>
-      </div>
+      <GameCompleteScreen
+        level={level}
+        score={game.score}
+        accuracy={game.accuracy}
+        correctAnswers={game.correctAnswers}
+        totalQuestions={game.totalQuestions}
+        bestStreak={game.bestStreak}
+        wrongAnswers={game.wrongAnswers}
+        onBack={onBack}
+      />
     );
   }
 
@@ -439,7 +343,6 @@ export function FlagGame({
                   آفرین! 🎉
                 </h3>
                 <p className="text-gray-600 mb-4">پاسخ شما صحیح است</p>
-
                 <div className="space-y-2 mb-6">
                   <div className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
                     <Trophy
@@ -450,7 +353,6 @@ export function FlagGame({
                       +{game.feedback.points}
                     </span>
                   </div>
-
                   {game.feedback.coins > 0 && (
                     <div className="inline-flex items-center gap-2 px-6 py-3 bg-orange-50 border-2 border-orange-200 rounded-xl animate-pulse">
                       <Coins
