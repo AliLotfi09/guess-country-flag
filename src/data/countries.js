@@ -49,7 +49,6 @@ export const COUNTRIES = [
   { name: "اردن", code: "jo", continent: "آسیا", level: "easy" },
   { name: "نیوزیلند", code: "nz", continent: "اقیانوسیه", level: "easy" },
   { name: "سنگاپور", code: "sg", continent: "آسیا", level: "easy" },
-  { name: "اسرائیل", code: "il", continent: "آسیا", level: "easy" },
 
   // متوسط - 50 کشور
   { name: "اوکراین", code: "ua", continent: "اروپا", level: "medium" },
