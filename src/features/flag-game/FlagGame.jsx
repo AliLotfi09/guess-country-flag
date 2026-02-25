@@ -1,8 +1,16 @@
 // src/features/flag-game/FlagGame.jsx
-import { useEffect, useState } from 'react';
-import { ChevronRight, Trophy, Flame, CheckCircle, XCircle, Lightbulb, Coins } from 'lucide-react';
-import { searchCountries } from '@data/countries';
-import { useGameEngine } from '@hooks/useGameEngine';
+import { useEffect, useState } from "react";
+import {
+  ChevronRight,
+  Trophy,
+  Flame,
+  CheckCircle,
+  XCircle,
+  Lightbulb,
+  Coins,
+} from "lucide-react";
+import { searchCountries } from "@data/countries";
+import { useGameEngine } from "@hooks/useGameEngine";
 
 export function FlagGame({
   level,
@@ -20,10 +28,10 @@ export function FlagGame({
       onGameComplete(lvl, score, correctAns, total, streak);
     },
     onSaveProgress,
-    onEarnCoins
+    onEarnCoins,
   );
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showHintMenu, setShowHintMenu] = useState(false);
   const [activeHints, setActiveHints] = useState({});
@@ -35,6 +43,31 @@ export function FlagGame({
       game.startGame(level);
     }
   }, []);
+
+  // در FlagGame.jsx - اضافه کن به useEffect ها
+
+  useEffect(() => {
+    console.log("📊 Game State:", {
+      currentQuestion: game.currentQuestion + 1,
+      totalQuestions: game.totalQuestions,
+      isGameComplete: game.isGameComplete,
+      isAnswered: game.isAnswered,
+      country: game.currentCountry?.name,
+    });
+  }, [
+    game.currentQuestion,
+    game.totalQuestions,
+    game.isGameComplete,
+    game.isAnswered,
+    game.currentCountry,
+  ]);
+
+  // ✅ وقتی بازی تموم شد، از ادامه دادن جلوگیری کن
+  useEffect(() => {
+    if (game.isGameComplete) {
+      console.log("🎉 Game completed! No more questions.");
+    }
+  }, [game.isGameComplete]);
 
   useEffect(() => {
     if (query.length > 0) {
@@ -48,38 +81,44 @@ export function FlagGame({
   const handleSelect = (country) => {
     miniApp?.hapticSelection?.();
     game.submitAnswer(country.name);
-    setQuery('');
+    setQuery("");
     setSuggestions([]);
   };
 
   const handleNext = () => {
-    miniApp?.hapticImpact?.('light');
+    telegram.hapticFeedback("medium");
+
+    // ✅ اگر بازی تموم شده، برگرد به منوی اصلی
     if (game.isGameComplete) {
+      console.log("🏁 Game is complete, going back...");
       game.resetGame();
       onBack();
-    } else {
-      game.nextQuestion();
-      setQuery('');
-      setActiveHints({});
+      return;
     }
+
+    // ✅ وگرنه برو سوال بعدی
+    console.log("➡️ Going to next question...");
+    game.nextQuestion();
+    setQuery("");
+    setActiveHints({});
   };
 
   const handleUseHint = (type, cost) => {
     if (coins < cost) {
-      miniApp?.hapticNotification?.('error');
-      alert('سکه کافی ندارید! 💰');
+      miniApp?.hapticNotification?.("error");
+      alert("سکه کافی ندارید! 💰");
       return;
     }
     if (activeHints[type]) {
-      alert('شما قبلاً از این راهنما استفاده کرده‌اید!');
+      alert("شما قبلاً از این راهنما استفاده کرده‌اید!");
       return;
     }
     const success = onSpendCoins(cost);
     if (success) {
-      miniApp?.hapticImpact?.('medium');
+      miniApp?.hapticImpact?.("medium");
       const hint = game.useHint(type);
       if (hint) {
-        setActiveHints(prev => ({ ...prev, [type]: hint }));
+        setActiveHints((prev) => ({ ...prev, [type]: hint }));
         setShowHintMenu(false);
       }
     }
@@ -102,7 +141,9 @@ export function FlagGame({
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-2xl mx-auto px-6 py-4">
             <div className="flex items-center justify-center">
-              <h2 className="text-lg font-semibold text-gray-900">نتیجه بازی</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                نتیجه بازی
+              </h2>
             </div>
           </div>
         </div>
@@ -113,32 +154,49 @@ export function FlagGame({
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trophy className="w-10 h-10 text-gray-900" strokeWidth={2} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">بازی تمام شد!</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                بازی تمام شد!
+              </h3>
               <p className="text-gray-500">
-                سطح {level === 'easy' ? 'آسان' : level === 'medium' ? 'متوسط' : 'سخت'}
+                سطح{" "}
+                {level === "easy"
+                  ? "آسان"
+                  : level === "medium"
+                    ? "متوسط"
+                    : "سخت"}
               </p>
             </div>
 
             <div className="space-y-3 mb-8">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <span className="text-gray-600 font-medium">امتیاز کل</span>
-                <span className="text-2xl font-bold text-gray-900">{game.score}</span>
+                <span className="text-2xl font-bold text-gray-900">
+                  {game.score}
+                </span>
               </div>
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <span className="text-gray-600 font-medium">دقت</span>
-                <span className="text-2xl font-bold text-gray-900">{game.accuracy}%</span>
+                <span className="text-2xl font-bold text-gray-900">
+                  {game.accuracy}%
+                </span>
               </div>
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <span className="text-gray-600 font-medium">بهترین زنجیره</span>
-                <span className="text-2xl font-bold text-gray-900">{game.bestStreak}</span>
+                <span className="text-2xl font-bold text-gray-900">
+                  {game.bestStreak}
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-green-50 border border-green-100 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-green-600 mb-1">{game.correctAnswers}</div>
+                  <div className="text-2xl font-bold text-green-600 mb-1">
+                    {game.correctAnswers}
+                  </div>
                   <div className="text-xs text-gray-600">صحیح</div>
                 </div>
                 <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-red-600 mb-1">{game.wrongAnswers}</div>
+                  <div className="text-2xl font-bold text-red-600 mb-1">
+                    {game.wrongAnswers}
+                  </div>
                   <div className="text-xs text-gray-600">غلط</div>
                 </div>
               </div>
@@ -174,7 +232,7 @@ export function FlagGame({
               <div className="flex items-center gap-1 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-full">
                 <Coins className="w-4 h-4 text-yellow-600" strokeWidth={2} />
                 <span className="text-sm font-bold text-yellow-700">
-                  {coins === 0 ? 'صفر' : coins}
+                  {coins === 0 ? "صفر" : coins}
                 </span>
               </div>
 
@@ -189,7 +247,9 @@ export function FlagGame({
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-gray-900 transition-all duration-500 ease-out"
-              style={{ width: `${((game.currentQuestion + 1) / game.totalQuestions) * 100}%` }}
+              style={{
+                width: `${((game.currentQuestion + 1) / game.totalQuestions) * 100}%`,
+              }}
             />
           </div>
         </div>
@@ -216,23 +276,40 @@ export function FlagGame({
               </div>
               <span className="text-xs font-medium text-gray-500">زنجیره</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900">{game.streak}</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {game.streak}
+            </div>
           </div>
         </div>
 
         {/* راهنماهای فعال */}
-        {(activeHints['first-letter'] || activeHints['continent']) && (
+        {(activeHints["first-letter"] || activeHints["continent"]) && (
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4 animate-slideDown">
             <div className="flex items-start gap-3">
-              <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" strokeWidth={2} />
+              <Lightbulb
+                className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+                strokeWidth={2}
+              />
               <div className="flex-1">
-                <h4 className="text-sm font-bold text-blue-900 mb-2">راهنماها:</h4>
+                <h4 className="text-sm font-bold text-blue-900 mb-2">
+                  راهنماها:
+                </h4>
                 <div className="space-y-1 text-sm">
-                  {activeHints['first-letter'] && (
-                    <p className="text-blue-700">• حرف اول: <span className="font-bold">{activeHints['first-letter']}</span></p>
+                  {activeHints["first-letter"] && (
+                    <p className="text-blue-700">
+                      • حرف اول:{" "}
+                      <span className="font-bold">
+                        {activeHints["first-letter"]}
+                      </span>
+                    </p>
                   )}
-                  {activeHints['continent'] && (
-                    <p className="text-blue-700">• قاره: <span className="font-bold">{activeHints['continent']}</span></p>
+                  {activeHints["continent"] && (
+                    <p className="text-blue-700">
+                      • قاره:{" "}
+                      <span className="font-bold">
+                        {activeHints["continent"]}
+                      </span>
+                    </p>
                   )}
                 </div>
               </div>
@@ -245,7 +322,7 @@ export function FlagGame({
           <div className="aspect-[3/2] bg-gray-50 rounded-2xl flex items-center justify-center mb-6 overflow-hidden border border-gray-100">
             <span
               className={`fi fi-${game.currentCountry.code} fis`}
-              style={{ fontSize: '140px' }}
+              style={{ fontSize: "140px" }}
             />
           </div>
           <div className="text-center">
@@ -260,7 +337,7 @@ export function FlagGame({
           <div className="mb-4">
             <button
               onClick={() => {
-                miniApp?.hapticImpact?.('light');
+                miniApp?.hapticImpact?.("light");
                 setShowHintMenu(!showHintMenu);
               }}
               className="w-full py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:border-gray-900 transition-all flex items-center justify-center gap-2 active:scale-98"
@@ -272,31 +349,39 @@ export function FlagGame({
             {showHintMenu && (
               <div className="mt-3 bg-white border border-gray-200 rounded-2xl p-3 space-y-2 animate-slideDown">
                 <button
-                  onClick={() => handleUseHint('first-letter', 10)}
-                  disabled={!!activeHints['first-letter']}
+                  onClick={() => handleUseHint("first-letter", 10)}
+                  disabled={!!activeHints["first-letter"]}
                   className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition text-right disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold text-gray-900">نمایش حرف اول</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      نمایش حرف اول
+                    </span>
                     <span className="text-sm font-bold text-yellow-600 flex items-center gap-1">
                       <Coins className="w-4 h-4" strokeWidth={2} /> 10
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">حرف اول نام کشور را نشان می‌دهد</p>
+                  <p className="text-xs text-gray-500">
+                    حرف اول نام کشور را نشان می‌دهد
+                  </p>
                 </button>
 
                 <button
-                  onClick={() => handleUseHint('continent', 15)}
-                  disabled={!!activeHints['continent']}
+                  onClick={() => handleUseHint("continent", 15)}
+                  disabled={!!activeHints["continent"]}
                   className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition text-right disabled:opacity-40 disabled:cursor-not-allowed active:scale-98"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold text-gray-900">نمایش قاره</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      نمایش قاره
+                    </span>
                     <span className="text-sm font-bold text-yellow-600 flex items-center gap-1">
                       <Coins className="w-4 h-4" strokeWidth={2} /> 15
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">قاره‌ای که کشور در آن قرار دارد</p>
+                  <p className="text-xs text-gray-500">
+                    قاره‌ای که کشور در آن قرار دارد
+                  </p>
                 </button>
               </div>
             )}
@@ -324,8 +409,12 @@ export function FlagGame({
                   className="w-full px-5 py-4 text-right hover:bg-gray-50 border-b last:border-b-0 border-gray-100 transition-colors active:bg-gray-100"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-gray-900">{country.name}</span>
-                    <span className="text-xs text-gray-400">{country.continent}</span>
+                    <span className="font-bold text-gray-900">
+                      {country.name}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {country.continent}
+                    </span>
                   </div>
                 </button>
               ))}
@@ -338,24 +427,39 @@ export function FlagGame({
       {game.feedback && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-6 animate-fadeIn">
           <div className="bg-white rounded-3xl p-8 text-center max-w-sm w-full animate-slideUp">
-            {game.feedback.type === 'correct' ? (
+            {game.feedback.type === "correct" ? (
               <>
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-12 h-12 text-green-600" strokeWidth={2.5} />
+                  <CheckCircle
+                    className="w-12 h-12 text-green-600"
+                    strokeWidth={2.5}
+                  />
                 </div>
-                <h3 className="text-3xl font-bold text-gray-900 mb-2">آفرین! 🎉</h3>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                  آفرین! 🎉
+                </h3>
                 <p className="text-gray-600 mb-4">پاسخ شما صحیح است</p>
 
                 <div className="space-y-2 mb-6">
                   <div className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
-                    <Trophy className="w-5 h-5 text-yellow-600" strokeWidth={2} />
-                    <span className="text-2xl font-bold text-yellow-600">+{game.feedback.points}</span>
+                    <Trophy
+                      className="w-5 h-5 text-yellow-600"
+                      strokeWidth={2}
+                    />
+                    <span className="text-2xl font-bold text-yellow-600">
+                      +{game.feedback.points}
+                    </span>
                   </div>
 
                   {game.feedback.coins > 0 && (
                     <div className="inline-flex items-center gap-2 px-6 py-3 bg-orange-50 border-2 border-orange-200 rounded-xl animate-pulse">
-                      <Coins className="w-5 h-5 text-orange-600" strokeWidth={2} />
-                      <span className="text-2xl font-bold text-orange-600">+{game.feedback.coins}</span>
+                      <Coins
+                        className="w-5 h-5 text-orange-600"
+                        strokeWidth={2}
+                      />
+                      <span className="text-2xl font-bold text-orange-600">
+                        +{game.feedback.coins}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -363,11 +467,18 @@ export function FlagGame({
             ) : (
               <>
                 <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <XCircle className="w-12 h-12 text-red-600" strokeWidth={2.5} />
+                  <XCircle
+                    className="w-12 h-12 text-red-600"
+                    strokeWidth={2.5}
+                  />
                 </div>
-                <h3 className="text-3xl font-bold text-gray-900 mb-2">نادرست</h3>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                  نادرست
+                </h3>
                 <p className="text-sm text-gray-500 mb-2">پاسخ صحیح:</p>
-                <p className="text-2xl font-bold text-gray-900 mb-6">{game.feedback.correctAnswer}</p>
+                <p className="text-2xl font-bold text-gray-900 mb-6">
+                  {game.feedback.correctAnswer}
+                </p>
               </>
             )}
 
@@ -375,7 +486,9 @@ export function FlagGame({
               onClick={handleNext}
               className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-colors active:scale-98"
             >
-              {game.currentQuestion + 1 >= game.totalQuestions ? 'مشاهده نتایج' : 'سوال بعدی'}
+              {game.currentQuestion + 1 >= game.totalQuestions
+                ? "مشاهده نتایج"
+                : "سوال بعدی"}
             </button>
           </div>
         </div>

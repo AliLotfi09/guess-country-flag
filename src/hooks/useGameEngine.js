@@ -1,77 +1,85 @@
-import { useState, useCallback, useEffect } from 'react';
-import { getRandomCountry } from '../data/countries';
+// src/hooks/useGameEngine.js
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { countries } from '../data/countries';
 
 export function useGameEngine(onGameComplete, onSaveProgress, onEarnCoins) {
   const [gameStarted, setGameStarted] = useState(false);
-  const [currentLevel, setCurrentLevel] = useState(null);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [totalQuestions] = useState(50);
-  const [currentCountry, setCurrentCountry] = useState(null);
-  const [usedCountries, setUsedCountries] = useState([]);
+  const [currentLevel, setCurrentLevel] = useState('easy');
   const [score, setScore] = useState(0);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
-  const [wrongAnswers, setWrongAnswers] = useState(0);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [wrongAnswers, setWrongAnswers] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [currentCountry, setCurrentCountry] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [hintsUsed, setHintsUsed] = useState([]);
-
-  useEffect(() => {
-    if (gameStarted && currentCountry && !isGameComplete) {
-      const gameState = {
-        currentLevel,
-        currentQuestion,
-        currentCountry,
-        usedCountries,
-        score,
-        correctAnswers,
-        wrongAnswers,
-        streak,
-        bestStreak,
-        hintsUsed,
-        timestamp: Date.now(),
-      };
-      onSaveProgress?.(gameState);
-    }
-  }, [currentQuestion, score, gameStarted]);
+  
+  const usedCountriesRef = useRef(new Set());
+  const availableCountriesRef = useRef([]);
 
   const startGame = useCallback((level) => {
     setCurrentLevel(level);
     setGameStarted(true);
-    setCurrentQuestion(0);
-    setUsedCountries([]);
     setScore(0);
-    setCorrectAnswers(0);
-    setWrongAnswers(0);
     setStreak(0);
     setBestStreak(0);
+    setCorrectAnswers(0);
+    setWrongAnswers(0);
+    setCurrentQuestion(0);
+    setIsGameComplete(false);
     setIsAnswered(false);
     setFeedback(null);
-    setIsGameComplete(false);
     setHintsUsed([]);
     
-    const firstCountry = getRandomCountry(level);
-    setCurrentCountry(firstCountry);
-    setUsedCountries([firstCountry.code]);
+    let questionCount;
+    if (level === 'easy') questionCount = 10;
+    else if (level === 'medium') questionCount = 15;
+    else questionCount = 20;
+    
+    setTotalQuestions(questionCount);
+    
+    usedCountriesRef.current = new Set();
+    availableCountriesRef.current = [...countries];
+    availableCountriesRef.current.sort(() => Math.random() - 0.5);
+    
+    if (availableCountriesRef.current.length > 0) {
+      const firstCountry = availableCountriesRef.current[0];
+      usedCountriesRef.current.add(firstCountry.code);
+      setCurrentCountry(firstCountry);
+      console.log(`🎮 Game started - Question 1/${questionCount}:`, firstCountry.name);
+    }
   }, []);
 
-  const resumeGame = useCallback((savedState) => {
-    setCurrentLevel(savedState.currentLevel);
+  const resumeGame = useCallback((savedProgress) => {
+    if (!savedProgress) return;
+    
+    setCurrentLevel(savedProgress.currentLevel);
     setGameStarted(true);
-    setCurrentQuestion(savedState.currentQuestion);
-    setCurrentCountry(savedState.currentCountry);
-    setUsedCountries(savedState.usedCountries);
-    setScore(savedState.score);
-    setCorrectAnswers(savedState.correctAnswers);
-    setWrongAnswers(savedState.wrongAnswers || 0);
-    setStreak(savedState.streak);
-    setBestStreak(savedState.bestStreak);
-    setHintsUsed(savedState.hintsUsed || []);
+    setScore(savedProgress.score);
+    setStreak(savedProgress.streak);
+    setBestStreak(savedProgress.bestStreak);
+    setCorrectAnswers(savedProgress.correctAnswers);
+    setWrongAnswers(savedProgress.wrongAnswers);
+    setCurrentQuestion(savedProgress.currentQuestion);
+    setTotalQuestions(savedProgress.totalQuestions);
+    setIsGameComplete(false);
     setIsAnswered(false);
     setFeedback(null);
-    setIsGameComplete(false);
+    setHintsUsed([]);
+    
+    usedCountriesRef.current = new Set(savedProgress.usedCountries || []);
+    availableCountriesRef.current = countries.filter(c => !usedCountriesRef.current.has(c.code));
+    availableCountriesRef.current.sort(() => Math.random() - 0.5);
+    
+    const country = countries.find(c => c.code === savedProgress.currentCountryCode);
+    if (country) {
+      setCurrentCountry(country);
+      console.log(`🔄 Game resumed - Question ${savedProgress.currentQuestion + 1}/${savedProgress.totalQuestions}:`, country.name);
+    }
   }, []);
 
   const submitAnswer = useCallback((answer) => {
@@ -85,20 +93,31 @@ export function useGameEngine(onGameComplete, onSaveProgress, onEarnCoins) {
     const hintPenalty = hintsUsed.length * 5;
     const totalPoints = isCorrect ? Math.max(0, basePoints + streakBonus - hintPenalty) : 0;
     
-    // محاسبه سکه برای این سوال
     let coinsEarned = 0;
     if (isCorrect) {
-      coinsEarned = 2; // پایه
-      if (streak >= 5) coinsEarned += 3; // بونوس streak
-      if (hintsUsed.length === 0) coinsEarned += 1; // بونوس بدون راهنما
+      coinsEarned = 2;
+      if (streak >= 5) coinsEarned += 3;
+      if (hintsUsed.length === 0) coinsEarned += 1;
       
-      // اضافه کردن سکه
+      console.log('💰 Earning coins:', coinsEarned);
       if (onEarnCoins) {
         onEarnCoins(coinsEarned);
       }
       
       setScore(prev => prev + totalPoints);
-      setCorrectAnswers(prev => prev + 1);
+      setCorrectAnswers(prev => {
+        const newCorrect = prev + 1;
+        
+        // ✅ Check if this was the last question
+        const nextQuestionIndex = currentQuestion + 1;
+        console.log(`📊 Progress: ${nextQuestionIndex}/${totalQuestions}`);
+        
+        if (nextQuestionIndex >= totalQuestions) {
+          console.log('🎉 Game will complete after this answer!');
+        }
+        
+        return newCorrect;
+      });
       setStreak(prev => {
         const newStreak = prev + 1;
         setBestStreak(current => Math.max(current, newStreak));
@@ -115,83 +134,166 @@ export function useGameEngine(onGameComplete, onSaveProgress, onEarnCoins) {
       points: totalPoints,
       coins: coinsEarned,
     });
-  }, [isAnswered, currentCountry, streak, currentLevel, hintsUsed, onEarnCoins]);
+  }, [isAnswered, currentCountry, streak, currentLevel, hintsUsed, currentQuestion, totalQuestions, onEarnCoins]);
+
+  const nextQuestion = useCallback(() => {
+    // ✅ اول از همه چک کنیم که آیا به آخر رسیدیم
+    const nextQuestionIndex = currentQuestion + 1;
+    
+    console.log(`🔍 Checking next question: current=${currentQuestion}, next=${nextQuestionIndex}, total=${totalQuestions}`);
+    
+    // ✅ اگر سوال بعدی از total بیشتر یا مساوی شد، بازی تموم شده
+    if (nextQuestionIndex >= totalQuestions) {
+      console.log('🏁 Game completed! Finalizing...');
+      setIsGameComplete(true);
+      
+      const finalAccuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+      
+      // Completion bonus
+      let completionBonus = 0;
+      if (finalAccuracy >= 90) completionBonus = 10;
+      else if (finalAccuracy >= 70) completionBonus = 5;
+      
+      if (onEarnCoins && completionBonus > 0) {
+        console.log('🎁 Completion bonus:', completionBonus);
+        onEarnCoins(completionBonus);
+      }
+      
+      if (onGameComplete) {
+        onGameComplete(currentLevel, score, correctAnswers, totalQuestions, bestStreak);
+      }
+      
+      // ✅ پاک کردن state ها
+      setIsAnswered(false);
+      setFeedback(null);
+      setHintsUsed([]);
+      setCurrentCountry(null);
+      
+      return; // ✅ مهم: از ادامه function جلوگیری می‌کنه
+    }
+    
+    // ✅ اگر هنوز سوال داریم، ادامه بده
+    console.log('➡️ Moving to next question...');
+    
+    setIsAnswered(false);
+    setFeedback(null);
+    setHintsUsed([]);
+    
+    // پیدا کردن کشور بعدی
+    let nextCountry = null;
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    while (!nextCountry && attempts < maxAttempts) {
+      if (availableCountriesRef.current.length === 0) {
+        console.log('🔄 Resetting available countries pool');
+        availableCountriesRef.current = countries.filter(c => !usedCountriesRef.current.has(c.code));
+        availableCountriesRef.current.sort(() => Math.random() - 0.5);
+      }
+      
+      if (availableCountriesRef.current.length === 0) {
+        console.log('♻️ All countries used, resetting completely');
+        usedCountriesRef.current.clear();
+        availableCountriesRef.current = [...countries];
+        availableCountriesRef.current.sort(() => Math.random() - 0.5);
+      }
+      
+      const candidate = availableCountriesRef.current.shift();
+      
+      if (candidate && !usedCountriesRef.current.has(candidate.code)) {
+        nextCountry = candidate;
+        usedCountriesRef.current.add(candidate.code);
+      }
+      
+      attempts++;
+    }
+    
+    if (nextCountry) {
+      setCurrentCountry(nextCountry);
+      setCurrentQuestion(nextQuestionIndex);
+      console.log(`✅ Question ${nextQuestionIndex + 1}/${totalQuestions}:`, nextCountry.name);
+      
+      // Save progress
+      if (onSaveProgress) {
+        onSaveProgress({
+          currentLevel,
+          currentQuestion: nextQuestionIndex,
+          totalQuestions,
+          score,
+          streak,
+          bestStreak,
+          correctAnswers,
+          wrongAnswers,
+          currentCountryCode: nextCountry.code,
+          usedCountries: Array.from(usedCountriesRef.current),
+          timestamp: Date.now(),
+        });
+      }
+    } else {
+      console.error('❌ Could not find next country');
+      setIsGameComplete(true);
+      if (onGameComplete) {
+        onGameComplete(currentLevel, score, correctAnswers, totalQuestions, bestStreak);
+      }
+    }
+  }, [currentQuestion, totalQuestions, currentLevel, score, streak, bestStreak, correctAnswers, wrongAnswers, onSaveProgress, onGameComplete, onEarnCoins]);
 
   const useHint = useCallback((type) => {
-    if (hintsUsed.includes(type)) return null;
+    if (!currentCountry || hintsUsed.includes(type)) return null;
     
     setHintsUsed(prev => [...prev, type]);
     
     if (type === 'first-letter') {
       return currentCountry.name[0];
-    } else if (type === 'continent') {
+    }
+    if (type === 'continent') {
       return currentCountry.continent;
     }
     
     return null;
   }, [currentCountry, hintsUsed]);
 
-  const nextQuestion = useCallback(() => {
-    setIsAnswered(false);
-    setFeedback(null);
-    setHintsUsed([]);
-    
-    if (currentQuestion + 1 >= totalQuestions) {
-      setIsGameComplete(true);
-      if (onGameComplete) {
-        onGameComplete(currentLevel, score, correctAnswers, totalQuestions, bestStreak);
-      }
-      return;
-    }
-    
-    const nextCountry = getRandomCountry(currentLevel, usedCountries);
-    if (nextCountry) {
-      setCurrentCountry(nextCountry);
-      setUsedCountries(prev => [...prev, nextCountry.code]);
-      setCurrentQuestion(prev => prev + 1);
-    }
-  }, [currentQuestion, totalQuestions, currentLevel, usedCountries, onGameComplete, correctAnswers, score, bestStreak]);
-
   const resetGame = useCallback(() => {
+    console.log('🔄 Resetting game...');
     setGameStarted(false);
-    setCurrentLevel(null);
-    setCurrentQuestion(0);
     setCurrentCountry(null);
-    setUsedCountries([]);
     setScore(0);
-    setCorrectAnswers(0);
-    setWrongAnswers(0);
     setStreak(0);
     setBestStreak(0);
+    setCorrectAnswers(0);
+    setWrongAnswers(0);
+    setCurrentQuestion(0);
+    setTotalQuestions(0);
     setIsAnswered(false);
     setFeedback(null);
     setIsGameComplete(false);
     setHintsUsed([]);
+    usedCountriesRef.current.clear();
+    availableCountriesRef.current = [];
   }, []);
 
-  const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / (currentQuestion + (isAnswered ? 1 : 0))) * 100) : 0;
+  const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
   return {
     gameStarted,
     currentLevel,
+    score,
+    streak,
+    bestStreak,
+    correctAnswers,
+    wrongAnswers,
     currentQuestion,
     totalQuestions,
     currentCountry,
-    score,
-    correctAnswers,
-    wrongAnswers,
-    streak,
-    bestStreak,
-    accuracy,
     isAnswered,
     feedback,
     isGameComplete,
-    hintsUsed,
+    accuracy,
     startGame,
     resumeGame,
     submitAnswer,
-    useHint,
     nextQuestion,
+    useHint,
     resetGame,
   };
 }
