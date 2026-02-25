@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IntroScreen } from '@features/IntroScreen';
 import { ProfileScreen } from '@features/ProfileScreen';
 import { LevelSelect } from '@features/LevelSelect';
@@ -18,6 +18,40 @@ export default function App() {
 
   // ایتا SDK
   const miniApp = useMiniApp();
+
+  // ── مدیریت دکمه بازگشت گوشی ──
+  // هر بار که صفحه عوض می‌شه، بک هندلر مناسب رو ست کن
+  useEffect(() => {
+    let cleanup;
+
+    if (showResumeDialog) {
+      // در دیالوگ resume: بک = انتخاب بازی جدید (بستن دیالوگ)
+      cleanup = miniApp.setBackHandler(() => {
+        handleNewGame();
+      });
+    } else if (screen === 'intro') {
+      // صفحه اول: هیچ بک هندلری نداریم → دکمه بک اپ رو می‌بنده (رفتار پیش‌فرض)
+      cleanup = miniApp.setBackHandler(null);
+    } else if (screen === 'profile') {
+      cleanup = miniApp.setBackHandler(() => {
+        handleBackToIntro();
+      });
+    } else if (screen === 'level') {
+      cleanup = miniApp.setBackHandler(() => {
+        handleBackToIntro();
+      });
+    } else if (screen === 'game' || screen === 'game-resume') {
+      // داخل بازی: بک = خروج از بازی (برگشت به لول سلکت)
+      cleanup = miniApp.setBackHandler(() => {
+        handleBack();
+      });
+    }
+
+    // cleanup: وقتی صفحه عوض می‌شه، هندلر قبلی رو پاک کن
+    return () => {
+      if (typeof cleanup === 'function') cleanup();
+    };
+  }, [screen, showResumeDialog]);
 
   const handleStart = () => {
     if (savedProgress && Date.now() - savedProgress.timestamp < 24 * 60 * 60 * 1000) {
@@ -53,7 +87,6 @@ export default function App() {
   const handleGameComplete = (level, score, correctAnswers, totalQuestions, bestStreak) => {
     updateStats(level, score, correctAnswers, totalQuestions, bestStreak);
     clearProgress();
-    // ارسال نتیجه به بات ایتا (اختیاری)
     if (miniApp.isEitaa) {
       miniApp.hapticNotification('success');
     }

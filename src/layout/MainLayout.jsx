@@ -33,7 +33,7 @@ export const MainLayout = ({ children }) => {
       <footer className="bg-white border-t-2 border-gray-200 py-6">
         <div className="container mx-auto px-6">
           <p className="text-center text-sm text-gray-500 font-medium">
-            ساخته شده با ❤️ با React، Tailwind CSS و React Simple Maps
+            ساخته شده با ❤️ با 
           </p>
         </div>
       </footer>
